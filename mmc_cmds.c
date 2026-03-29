@@ -2720,13 +2720,28 @@ static int erase(int dev_fd, __u32 argin, __u32 start, __u32 end)
 		perror("Erase multi-cmd ioctl");
 
 	/* Does not work for SPI cards */
-	if (multi_cmd->cmds[1].response[0] & R1_ERASE_PARAM) {
-		fprintf(stderr, "Erase start response: 0x%08x\n",
+	if (multi_cmd->cmds[0].response[0] & (R1_OUT_OF_RANGE |
+					       R1_ADDRESS_ERROR |
+					       R1_ERASE_PARAM |
+					       R1_ERASE_SEQ_ERROR)) {
+		fprintf(stderr, "Erase start response error: 0x%08x\n",
 				multi_cmd->cmds[0].response[0]);
 		ret = -EIO;
 	}
-	if (multi_cmd->cmds[2].response[0] & R1_ERASE_SEQ_ERROR) {
-		fprintf(stderr, "Erase response: 0x%08x\n",
+	if (multi_cmd->cmds[1].response[0] & (R1_OUT_OF_RANGE |
+					       R1_ADDRESS_ERROR |
+					       R1_ERASE_PARAM |
+					       R1_ERASE_SEQ_ERROR)) {
+		fprintf(stderr, "Erase end response error: 0x%08x\n",
+				multi_cmd->cmds[1].response[0]);
+		ret = -EIO;
+	}
+	if (multi_cmd->cmds[2].response[0] & (R1_OUT_OF_RANGE |
+					       R1_ERASE_SEQ_ERROR |
+					       R1_WP_VIOLATION |
+					       R1_WP_ERASE_SKIP |
+					       R1_ERASE_RESET)) {
+		fprintf(stderr, "Erase response error: 0x%08x\n",
 				multi_cmd->cmds[2].response[0]);
 		ret = -EIO;
 	}
